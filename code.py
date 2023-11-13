@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 dannye = pd.read_excel('in.xlsx')
 new_dannye = dannye[np.isfinite(dannye)]
 
-
 # Присваивание переменных исходным данным
 alltime = dannye.to_numpy(float)[:, 0]  # Все время исследования
 pressure = dannye.to_numpy(float)[:, 1]  # Забойное давление
@@ -22,19 +21,19 @@ alltimeSEC = alltime * 60  # Перевод мин-сек
 
 # Операции с данными
 
-#Выбор способа по нахождению времени закачки
-print('Напишите 1, чтобы выбрать время закачки автоматически',
-      'Напишите 2, чтобы выбрать время закачки самостоятельно')
+# Выбор способа по нахождению времени закачки
+print('Напишите 1, чтобы выбрать время закачки автоматически')
+print('Напишите 2, чтобы выбрать время закачки самостоятельно')
 choose = int(input())
 
 # Алгоритм задает время закачки и выбирает наименьшее близкое значение
-if choose ==2:
+if choose == 2:
     print('Напишите время закачки в секундах')
     timeZakSEC = int(input())
     for x in timeSEC:
-        if timeZakSEC > x:
+        if timeZakSEC < x:
             timeZakSEC = x
-            timeZak = timeZakSEC/60
+            timeZak = timeZakSEC / 60
             break
 
 # Поиск времени закачки по дебиту равному 0
@@ -44,20 +43,19 @@ else:
         if x[1] == 0:
             timeZak = t
             timeZakSEC = t * 60
-            # print(timeZakSEC)
             break
         t = x[0]
 
 # Время Хорнера
 HornerTime = []
 for x in alltimeSEC:
-    if (x-timeZakSEC) >0:
-        addHorner = math.log((x) / (x-timeZakSEC))
+    if x > timeZakSEC:
+        addHorner = math.log((x / (x - timeZakSEC)))
         HornerTime.append(addHorner)
     else:
         addHorner = 0
         HornerTime.append(addHorner)
-print(HornerTime)
+
 # Qdt и сортировка от NaN
 Qdt = []
 y = 0
@@ -70,49 +68,75 @@ for x in range(0, len(debitPS)):
         b = debitPS[x] * (timeSEC[x] - timeSEC[x - 1])
         Qdt.append(b)
 Qdt = list(filter(lambda i: str(i) != 'nan', Qdt))
-# print(Qdt)
+
 
 # таблица с dt
 deltat = [alltimeSEC - timeZakSEC]
-# print(deltat)
 
 # Объем закачки
 FullDebit = sum(Qdt)
 
 # Средняя закачка
-AvgDebit = FullDebit / (timeZakSEC * 60)
+AvgDebit = FullDebit / timeZakSEC
 
-print('Введите желаемую величину для отображения графика t-Pзаб, 1-Па, 2- МПа, 3-атм')
+# Выбор единицы измерения
+print('Введите желаемую величину для отображения графика t-Pзаб')
+print('1-Па, 2- МПа, 3-атм')
 choose2 = int(input())
 if choose2 == 1:
     popravka = 1
-    pressureCh = pressurePA*popravka
+    pressureCh = pressurePA * popravka
 elif choose2 == 2:
-    popravka = 1/(10**6)
+    popravka = 1 / (10 ** 6)
     pressureCh = pressurePA * popravka
 elif choose2 == 3:
-    popravka = 1/101327.3887931908
+    popravka = 1 / 101327.3887931908
     pressureCh = pressurePA * popravka
-    print(pressureCh)
+
 
 # График t-Pзаб
-fig, ax = plt.subplots()
-ax.plot(alltimeSEC, pressureCh, color='green')
-ax.set_xlabel('Время, сек', fontsize=7)
-if choose2 == 1:
-    ax.set_ylabel('Забойное давление, Па', fontsize=7)
-elif choose2 == 2:
-    ax.set_ylabel('Забойное давление, МПа', fontsize=7)
-elif choose2 == 3:
-    ax.set_ylabel('Забойное давление, атм', fontsize=7)
-ax2 = ax.twinx()
-ax2.plot(alltimeSEC, debitPS, color='orange')
-ax2.set_ylabel('Закачка, м3/сек', fontsize=7)
-plt.ylim(0, 0.1)
-plt.show()
+# fig, ax = plt.subplots()
+# ax.plot(alltimeSEC, pressureCh, color='green')
+# ax.set_xlabel('Время, сек', fontsize=7)
+# if choose2 == 1:
+#     ax.set_ylabel('Забойное давление, Па', fontsize=7)
+#     z=str('Па')
+# elif choose2 == 2:
+#     ax.set_ylabel('Забойное давление, МПа', fontsize=7)
+#     z=str('Мпа')
+# elif choose2 == 3:
+#     ax.set_ylabel('Забойное давление, атм', fontsize=7)
+#     z=str('атм')
+# ax2 = ax.twinx()
+# ax2.plot(alltimeSEC, debitPS, color='orange')
+# ax2.set_ylabel('Закачка, м3/сек', fontsize=7)
+# plt.ylim(0, 0.1)
+# plt.show()
+# def GraphicPressHorner (x,y,z,a,b,c):
+
+
+
+# GraphicPressHorner(LFHorner,LFpressure,z,alltimeSEC,pressureCh,debitPS)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Поиск данных после нагнетательного теста, Pзаб - Время хорнера
-linearFind = [HornerTime, pressurePA, alltime]
+linearFind = [HornerTime, pressureCh, alltime]
 tranlinearFind = np.transpose(linearFind)
 LFpressure = []
 LFHorner = []
@@ -124,24 +148,44 @@ for x in tranlinearFind:
     else:
         continue
 
-# График lg(t/t+T) - Pзаб
-fig, ax = plt.subplots()
-ax.plot(LFHorner, LFpressure, color='red')
-ax.set_xlabel('Время Хорнера', fontsize=7)
-ax.set_ylabel('Забойное давление, Па')
-plt.xlim(0, 10)
-plt.ylim(0, 70000000)
-plt.show()
-
 LFHorLFpres1 = LFHorner, LFpressure
 LFHorLFpres2 = np.transpose(LFHorLFpres1)
+
+plt.subplot(1, 2, 1)
+plt.plot(alltimeSEC, pressureCh, color='green',label='Давление')
+plt.xlabel('Время, сек')
+if choose2 == 1:
+    plt.ylabel('Забойное давление,  Па',)
+    z = str('Па')
+elif choose2 == 2:
+    plt.ylabel('Забойное давление,  МПа',)
+    z = str('Мпа')
+elif choose2 == 3:
+    plt.ylabel('Забойное давление,  атм',)
+    z = str('атм')
+ax2 = plt.twinx()
+ax2.plot(alltimeSEC, debitPS, color='orange',label='Закачка')
+ax2.set_ylabel('Закачка, м3/сек', )
+plt.ylim(0, 0.1)
+plt.subplot(1, 2, 2)
+plt.plot(LFHorner, LFpressure, color='red')
+plt.xlabel('Время Хорнера', )
+plt.ylabel('Забойное давление,' + z)
+plt.title('После закачки')
+maxX = max(LFHorner)
+maxY = max(LFpressure)
+plt.xlim(0, maxX * 1.5)
+plt.ylim(0, maxY *1.2)
+plt.tight_layout()
+plt.show()
+
 
 # Построение касательной
 
 # Ввод значений для пользователя
-print('Введите значение времени Хорнера 1, для построения касательной: ')
+print('Введите значение времени Хорнера 1, для пластового давления: ')
 userHorner1 = float(input())
-print('Введите значение времени Хорнера 2, для построения касательной: ')
+print('Введите значение времени Хорнера 2, для определения пластового давления: ')
 userHorner2 = float(input())
 
 # Смена значений, если пользователь введет сначала большее значение, а затем меньшее
@@ -149,6 +193,7 @@ if userHorner1 > userHorner2:
     c = userHorner1
     userHorner1 = userHorner2
     userHorner2 = c
+
 
 # Поиск значений среди предоставленных данных, максимально приближенных к введенным пользователем
 for x in LFHorLFpres2:
@@ -168,11 +213,9 @@ for x in LFHorLFpres2:
         break
 
 # Расчет пластового давления, основываясь на данных пользователя
-PlastPressure = (userPressure1 - userPressure2) * ((-1) * ((userHorner2) / (userHorner1 - userHorner2))) + userPressure2
-print('Пластовое давление равно:', PlastPressure,'Па')
+PlastPressure = (userPressure1 - userPressure2) * ((-1) * (userHorner2 / (userHorner1 - userHorner2))) + userPressure2
+print('Пластовое давление равно:', PlastPressure, 'Па')
 tga = (userPressure2 - userPressure1) / (userHorner2 - userHorner1)
 print('Уклон касательной равен :', tga)
-hydro = (AvgDebit / 4 / math.pi / tga)*10**12
+hydro = (AvgDebit / 4 / math.pi / tga) * 10 ** 12
 print('Гидропроводность равна:', hydro, 'м*Д/Па*с')
-
-dannye.to_excel('./out.xlsx', sheet_name='Расчеты', index=False)
