@@ -2,14 +2,12 @@ import numpy as np
 import pandas as pd
 import math
 
-from classes import Pressure, Time, Debit
 
 
 # Сбор информации из Excel файла
 def GetInfoFromExcel():
     data = pd.read_excel('in.xlsx')
     return data
-
 
 # Поиск времени закачки в секундах
 def TimeZAK(data, time):
@@ -32,7 +30,6 @@ def TimeZAK(data, time):
                 break
     return timeZakSEC
 
-
 # Расчет массива времени Хорнера
 def HornerTime(alltime, DownloadTime):
     HornerTime = []
@@ -44,7 +41,6 @@ def HornerTime(alltime, DownloadTime):
             addHorner = 0
             HornerTime.append(addHorner)
     return HornerTime
-
 
 # Получение массива "закачка-за отрезок времени" (Qdt)
 def Qdt(debit, time):
@@ -61,12 +57,10 @@ def Qdt(debit, time):
     Qdt = list(filter(lambda i: str(i) != 'nan', Qdt))
     return Qdt
 
-
 # Весь закачанный объем за время закачки
 def FullDebit(Qdt):
     FulDebit = sum(list(Qdt))
     return FulDebit
-
 
 # Средний дебит за время закачки
 def AvgDebit(FullDebit, DownloadTime):
@@ -74,7 +68,6 @@ def AvgDebit(FullDebit, DownloadTime):
     b = DownloadTime
     AvgDebit = a / b
     return AvgDebit
-
 
 # Давление после остановки закачки
 def GetPressureAfterTest(pressure, alltime, DownloadTime):
@@ -88,7 +81,6 @@ def GetPressureAfterTest(pressure, alltime, DownloadTime):
             continue
     return PressureAfterTest
 
-
 # Время Хорнера после остановки закачки
 def GetHornerAfterTest(HornerTime, alltime, DownloadTime):
     Alldata = HornerTime, alltime
@@ -100,7 +92,6 @@ def GetHornerAfterTest(HornerTime, alltime, DownloadTime):
         else:
             continue
     return HornerAfterTest
-
 
 # Ввод и преобразование пользовательских значений времени Хорнера и давления
 def UserHorner(hornerAfterTest, pressureAfterTest):
@@ -129,26 +120,16 @@ def UserHorner(hornerAfterTest, pressureAfterTest):
     print(userHorner1, userHorner2, userPressure1, userPressure2)
     return userHorner1, userHorner2, userPressure1, userPressure2
 
-
-# Пластовое давление
-# def ReservoirPressure(UserInput):
-#     PlastPressure = (UserInput[2] - UserInput[3]) * ((-1) * (UserInput[1] / (UserInput[0] - UserInput[1]))) + UserInput[
-#         3]
-#     print(f'Пластовое давление равно: {PlastPressure}  Па')
-#     return PlastPressure
-
 def ReservoirPressure(Horner1, Horner2, Pressure1, Pressure2):
     PlastPressure = (Pressure1 - Pressure2) * ((-1) * (Horner2 / (Horner1 - Horner2))) + Pressure1
     print(f'Пластовое давление равно: {PlastPressure}  Па')
     return PlastPressure
-
 
 # Угол наклона прямой (tga)
 def tgAlpha(UserInput):
     tga = (UserInput[3] - UserInput[2]) / (UserInput[1] - UserInput[0])
     print('Уклон касательной равен :', tga)
     return tga
-
 
 # Гидропроводность
 def HydraulicСonductivity(AvgDebit, tga):
