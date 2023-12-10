@@ -1,4 +1,5 @@
 import numpy as np
+
 import HornerM
 from Graphics import FirstGraphic, SecondGraphic, ThirdGraphic
 from classes import Pressure, Time, Debit, Meters, Hydro, Compressibility
@@ -67,7 +68,7 @@ compressibility = 0.01
 print('Введите значение радиуса скважины, м')
 # WellRadius = input()
 WellRadius = 0.146
-
+# Безразмерное время
 DimensTime = HornerM.DimensionlessTime(pressureAfterTest,
                                        alltimeAfterTest,
                                        Meters(PlastThickness).fM_toFoot,
@@ -77,7 +78,7 @@ DimensTime = HornerM.DimensionlessTime(pressureAfterTest,
                                        Meters(WellRadius).fM_toFoot,
                                        Debit(AvgDebit).fM3sec_toSTBd,
                                        coefB)[0]
-
+# Безразмерное давление
 DimensPressure = HornerM.DimensionlessTime(pressureAfterTest,
                                            alltimeAfterTest,
                                            Meters(PlastThickness).fM_toFoot,
@@ -87,7 +88,21 @@ DimensPressure = HornerM.DimensionlessTime(pressureAfterTest,
                                            Meters(WellRadius).fM_toFoot,
                                            Debit(AvgDebit).fM3sec_toSTBd,
                                            coefB)[1]
-
+# Производная безразмерного давления
 dPWDtodTD = HornerM.pwDtotD(DimensTime, DimensPressure)
-exponental = HornerM.exponential_smoothing(dPWDtodTD, 0.2)
+# Массив производной после экспоненциального сглаживания
+exponental = HornerM.exponential_smoothing(dPWDtodTD, 0.2)  # Вопрос сколько делать экспоненциальное сгл.
+# График стращный
 ThirdGraphic(DimensTime, DimensPressure, dPWDtodTD, exponental)
+# m EST
+mest = HornerM.Mest(DimensPressure, DimensTime)[0]
+# Максимальное значение производной безразмерного давления после экспоненциального сглаживания
+dPWmax = HornerM.getMax(exponental, DimensTime)[0]
+# Соответствующее этой производной значение безразмерного времени
+dtDmax = HornerM.getMax(exponental, DimensTime)[1]
+# Ccoef
+Ccoef = HornerM.Ccoef(AvgDebit, dPWmax, coefB, dtDmax)
+# CDcoef
+CDcoef = HornerM.CDcoef(Ccoef, Porosity, compressibility, WellRadius)
+# Скин-фактор
+Skin = HornerM.Skin(AvgDebit, coefB, Ccoef, Hydro(HydConductivity).fDarsi_toM2, DownloadTime, mest, CDcoef)

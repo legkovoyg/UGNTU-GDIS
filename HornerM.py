@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import math
+import statsmodels.api as sm
 from functools import reduce
 from array import *
-from numpy import gradient
 
 
 # Сбор информации из Excel файла
@@ -143,6 +143,7 @@ def UserHorner(hornerAfterTest, pressureAfterTest):
     return userHorner1, userHorner2, userPressure1, userPressure2
 
 
+# Пластовое давление
 def ReservoirPressure(Horner1, Horner2, Pressure1, Pressure2):
     PlastPressure = (Pressure1 - Pressure2) * ((-1) * (Horner2 / (Horner1 - Horner2))) + Pressure1
     print(f'Пластовое давление равно: {PlastPressure}  Па')
@@ -204,6 +205,7 @@ def DimensionlessTime(pressure, alltime, thickness, hydro, porosity, compressibi
     return tD, pwD
 
 
+# Производная безразмерного давления
 def pwDtotD(tD, pwD):
     dx = np.diff(tD)
     dy = np.diff(pwD)
@@ -215,11 +217,71 @@ def pwDtotD(tD, pwD):
     return result
 
 
+# Экспоненциальное сглаживание производной безразмерного давления
 def exponential_smoothing(series, alpha):
     result = [series[0]]
     for n in range(1, len(series)):
         result.append(alpha * series[n] + (1 - alpha) * result[n - 1])
     return result
 
-# def Mest (pwd, twd)
-#
+
+# mest
+def Mest(pwd, td):
+    ds = np.transpose([td, pwd])
+    print('Введите количество точек, которые необходимо выбрать: ')
+    n = int(input())
+    indices = []
+    for i in range(0, n):
+        print('Введите индексы точек, которые необходимо выбрать.')
+        b = int(input())
+        indices.append(b)
+    selected_points = [ds[index] for index in indices]
+    df = pd.DataFrame(selected_points)
+    x = df.values[:, 0]
+    y = df.values[:, 1]
+    x = sm.add_constant(x)
+    model = sm.OLS(y, x).fit()
+    mestK = model.params[1]
+    mestB = model.params[0]
+    return mestK, mestB
+
+
+# Максимальное значение производной безразмерного давления и соответствующее значение безразмерного времени
+def getMax(exponental, twd):
+    Max = np.transpose([exponental, twd])
+    for x in Max:
+        if x[0] == max(exponental):
+            expMax = x[0]
+            twdMax = x[1]
+    return expMax, twdMax
+
+
+# С коэф
+def Ccoef(q, exponental, B, tmax):
+    C = (2 * q * exponental * B) / (tmax * 24 * math.exp(2))
+    return C
+
+
+# CD коэф
+def CDcoef(Ccoef, porosity, compressibility, wellRadius):
+    CD = (Ccoef / (porosity * compressibility * wellRadius ** 2))
+    print(f'Ccoef', Ccoef,
+          f'porosity', porosity,
+          f'compressibility', compressibility,
+          f'wellRadius', wellRadius)
+    print(CD)
+    return CD
+
+
+# Скин-фактор
+def Skin(debit, B, C, hydro, tzak, mest, CD):
+    Skin = ((debit * hydro * B * tzak * 0.02061405) / ((C ** 2) * mest)) - math.log(CD * 1.9959675 * (10 ** 6)) / 2
+    print(f'debit', debit,
+          f'B', B,
+          f'C', C,
+          f'hydro', hydro,
+          f'tzak', tzak,
+          f'mest', mest,
+          f'CD', CD)
+    print(Skin)
+    return Skin
