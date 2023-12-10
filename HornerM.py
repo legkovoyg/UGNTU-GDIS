@@ -1,13 +1,16 @@
 import numpy as np
 import pandas as pd
 import math
-
+from functools import reduce
+from array import *
+from numpy import gradient
 
 
 # Сбор информации из Excel файла
 def GetInfoFromExcel():
     data = pd.read_excel('in.xlsx')
     return data
+
 
 # Поиск времени закачки в секундах
 def TimeZAK(data, time):
@@ -30,6 +33,7 @@ def TimeZAK(data, time):
                 break
     return timeZakSEC
 
+
 # Расчет массива времени Хорнера
 def HornerTime(alltime, DownloadTime):
     HornerTime = []
@@ -41,6 +45,7 @@ def HornerTime(alltime, DownloadTime):
             addHorner = 0
             HornerTime.append(addHorner)
     return HornerTime
+
 
 # Получение массива "закачка-за отрезок времени" (Qdt)
 def Qdt(debit, time):
@@ -57,10 +62,12 @@ def Qdt(debit, time):
     Qdt = list(filter(lambda i: str(i) != 'nan', Qdt))
     return Qdt
 
+
 # Весь закачанный объем за время закачки
 def FullDebit(Qdt):
     FulDebit = sum(list(Qdt))
     return FulDebit
+
 
 # Средний дебит за время закачки
 def AvgDebit(FullDebit, DownloadTime):
@@ -68,6 +75,7 @@ def AvgDebit(FullDebit, DownloadTime):
     b = DownloadTime
     AvgDebit = a / b
     return AvgDebit
+
 
 # Давление после остановки закачки
 def GetPressureAfterTest(pressure, alltime, DownloadTime):
@@ -81,6 +89,7 @@ def GetPressureAfterTest(pressure, alltime, DownloadTime):
             continue
     return PressureAfterTest
 
+
 # Время Хорнера после остановки закачки
 def GetHornerAfterTest(HornerTime, alltime, DownloadTime):
     Alldata = HornerTime, alltime
@@ -92,6 +101,19 @@ def GetHornerAfterTest(HornerTime, alltime, DownloadTime):
         else:
             continue
     return HornerAfterTest
+
+
+def GetAlltimeAfterTest(alltime, DownloadTime):
+    Alldata = alltime
+    Alldata = np.transpose(Alldata)
+    ALltimeAfterTest = []
+    for i in Alldata:
+        if i > float(DownloadTime):
+            ALltimeAfterTest.append(i)
+        else:
+            continue
+    return ALltimeAfterTest
+
 
 # Ввод и преобразование пользовательских значений времени Хорнера и давления
 def UserHorner(hornerAfterTest, pressureAfterTest):
@@ -120,10 +142,12 @@ def UserHorner(hornerAfterTest, pressureAfterTest):
     print(userHorner1, userHorner2, userPressure1, userPressure2)
     return userHorner1, userHorner2, userPressure1, userPressure2
 
+
 def ReservoirPressure(Horner1, Horner2, Pressure1, Pressure2):
     PlastPressure = (Pressure1 - Pressure2) * ((-1) * (Horner2 / (Horner1 - Horner2))) + Pressure1
     print(f'Пластовое давление равно: {PlastPressure}  Па')
     return PlastPressure
+
 
 # Угол наклона прямой (tga)
 def tgAlpha(UserInput):
@@ -131,8 +155,71 @@ def tgAlpha(UserInput):
     print('Уклон касательной равен :', tga)
     return tga
 
+
 # Гидропроводность
 def HydraulicСonductivity(AvgDebit, tga):
     hydro = (AvgDebit / 4 / math.pi / tga) * 10 ** 12
     print('Гидропроводность равна:', hydro, 'м*Д/Па*с')
     return hydro
+
+
+# Расчет безразмерного времени и давления
+def DimensionlessTime(pressure, alltime, thickness, hydro, porosity, compressibility, wellRadius, AvgDebit, coefB):
+    a = pressure, alltime
+    IterPressure = np.transpose(a)
+    New = []
+    global iteration_count
+    iteration_count = 0
+    for x in IterPressure:
+        if x[0] < reduce(max, pressure):
+            if iteration_count == 0:
+                continue
+            elif iteration_count == 1:
+                New.append([x[0], x[1]])
+        elif x[0] == reduce(max, pressure):
+            New.append([x[0], x[1]])
+            iteration_count = 1
+    startTime = float(New[0][1])
+    tD = []
+
+    for x in New:
+        if x[1] - startTime == 0:
+            tD.append(0)
+        else:
+            td1 = 0.0002637 * hydro * (x[1] - startTime)
+            td2 = (porosity * compressibility * math.pow(wellRadius, 2) * thickness * 3600)
+            td = td1 / td2
+            tD.append(td)
+
+    startPressure = float(New[0][0])
+    pwD = []
+    for x in New:
+        if x[0] - startPressure == 0:
+            pwD.append(0)
+        else:
+            pwd1 = hydro / (141.2 * AvgDebit * coefB)
+            pwd2 = ((startPressure - x[0]) * 0.00015)
+            pwd = pwd1 * pwd2
+            pwD.append(pwd)
+    return tD, pwD
+
+
+def pwDtotD(tD, pwD):
+    dx = np.diff(tD)
+    dy = np.diff(pwD)
+    dxdy = np.transpose([dx, dy])
+    result = []
+    for x in dxdy:
+        result1 = x[1] / x[0]
+        result.append(result1)
+    return result
+
+
+def exponential_smoothing(series, alpha):
+    result = [series[0]]
+    for n in range(1, len(series)):
+        result.append(alpha * series[n] + (1 - alpha) * result[n - 1])
+    return result
+
+# def Mest (pwd, twd)
+#
