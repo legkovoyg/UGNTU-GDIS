@@ -90,8 +90,11 @@ DimensPressure = HornerM.DimensionlessTime(pressureAfterTest,
                                            coefB)[1]
 # Производная безразмерного давления
 dPWDtodTD = HornerM.pwDtotD(DimensTime, DimensPressure)
+# Введите значение альфа для сглаживания прямой
+print('Введите значение альфа для сглаживания прямой, от нуля до единицы')
+AlphaInput = input()
 # Массив производной после экспоненциального сглаживания
-exponental = HornerM.exponential_smoothing(dPWDtodTD, 0.2)  # Вопрос сколько делать экспоненциальное сгл.
+exponental = HornerM.exponential_smoothing(dPWDtodTD, AlphaInput)  # Вопрос сколько делать экспоненциальное сгл.
 # График стращный
 ThirdGraphic(DimensTime, DimensPressure, dPWDtodTD, exponental)
 # m EST
