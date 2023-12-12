@@ -53,21 +53,21 @@ tga = HornerM.tgAlpha(UserInput)
 # Гидропроводность
 HydConductivity = HornerM.HydraulicСonductivity(AvgDebit, tga)
 print('Введите толщину пласта, м')
-# PlastThickness = input()
-PlastThickness = 8.0
+PlastThickness = float(input())
+# PlastThickness = 8.0
 
 print('Введите величину коэффициента B, безразмерное')
-# coefB = input()
-coefB = 1.2
+coefB = float(input())
+# coefB = 1.2
 print('Введите значение пористости, д.ед ')
-# Porosity = input()
-Porosity = 0.28
+Porosity = float(input())
+# Porosity = 0.28
 print('Введите значение сжимаемости нефти')
-# compressibility = float(input())
-compressibility = 0.01
+compressibility = float(input())
+# compressibility = 0.01
 print('Введите значение радиуса скважины, м')
-# WellRadius = input()
-WellRadius = 0.146
+WellRadius = float(input())
+# WellRadius = 0.146
 # Безразмерное время
 DimensTime = HornerM.DimensionlessTime(pressureAfterTest,
                                        alltimeAfterTest,
@@ -92,7 +92,7 @@ DimensPressure = HornerM.DimensionlessTime(pressureAfterTest,
 dPWDtodTD = HornerM.pwDtotD(DimensTime, DimensPressure)
 # Введите значение альфа для сглаживания прямой
 print('Введите значение альфа для сглаживания прямой, от нуля до единицы')
-AlphaInput = input()
+AlphaInput = float(input())
 # Массив производной после экспоненциального сглаживания
 exponental = HornerM.exponential_smoothing(dPWDtodTD, AlphaInput)  # Вопрос сколько делать экспоненциальное сгл.
 # График стращный
